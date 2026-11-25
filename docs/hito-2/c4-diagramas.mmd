@@ -1,0 +1,14 @@
+%% NIVEL 1: DIAGRAMA DE CONTEXTO
+C4Context
+    title Diagrama de Contexto - Sistema de Gestión de Pedidos Bavaria S.A.S.
+    Person(cliente, "Cliente (Tendero / Distribuidor)", "Explora catálogo, arma carrito, confirma pedidos y valida entrega.")
+    Person(admin, "Administrador Bavaria", "Gestiona catálogo de productos y aprueba órdenes de compra.")
+    Person(proveedor, "Proveedor Logístico", "Empaca y despacha pedidos aprobados hacia el cliente.")
+    
+    System(bavariaSys, "Plataforma Logística Bavaria S.A.S.", "Sistema web centralizado para gestión integral del ciclo de vida de pedidos.")
+    System_Ext(emailSvc, "Servicio de Notificaciones (SMTP/SendGrid)", "Envía alertas de cambio de estado del pedido.")
+
+    Rel(cliente, bavariaSys, "Crea pedidos y confirma entrega", "HTTPS / JSON")
+    Rel(admin, bavariaSys, "Aprueba pedidos y administra catálogo", "HTTPS / JSON")
+    Rel(proveedor, bavariaSys, "Actualiza estado de empaque y envío", "HTTPS / JSON")
+    Rel(bavariaSys, emailSvc, "Dispara notificaciones de estado", "SMTP / API REST")

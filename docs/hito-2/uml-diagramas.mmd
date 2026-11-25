@@ -1,0 +1,36 @@
+%% DIAGRAMA DE SECUENCIA FULL STACK CON FLUJOS ALTERNOS
+sequenceDiagram
+    autonumber
+    actor C as Cliente (React SPA)
+    participant Ctrl as PedidoController
+    participant Srv as PedidoService
+    participant RepoP as ProductoRepository
+    participant RepoO as PedidoRepository
+    database DB as PostgreSQL
+
+    C->>Ctrl: POST /api/v1/pedidos/cliente/{id}/confirmar
+    Ctrl->>Srv: confirmarPedido(clienteId)
+    Srv->>DB: BEGIN TRANSACTION
+    
+    alt Carrito vacío (items.isEmpty())
+        Srv-->>Ctrl: throw ReglaNegocioException("El carrito está vacío")
+        Ctrl-->>C: HTTP 422 Unprocessable Entity
+    else Carrito válido
+        Srv->>RepoP: findByIdForUpdate(productoId)
+        RepoP->>DB: SELECT * FROM productos WHERE id = ? FOR UPDATE
+        DB-->>RepoP: Producto (stockDisponible)
+        
+        alt Stock insuficiente (stock < cantidad)
+            Srv->>DB: ROLLBACK
+            Srv-->>Ctrl: throw StockInsuficienteException("Stock agotado")
+            Ctrl-->>C: HTTP 409 Conflict
+        else Stock suficiente
+            Srv->>RepoP: save(productoConNuevoStock)
+            Srv->>RepoO: save(nuevoPedido [estado=CREADO])
+            RepoO->>DB: INSERT INTO pedidos & detalle_pedidos
+            DB-->>RepoO: Pedido guardado (ID)
+            Srv->>DB: COMMIT
+            Srv-->>Ctrl: PedidoResponse
+            Ctrl-->>C: HTTP 201 Created (PedidoResponse)
+        end
+    end
